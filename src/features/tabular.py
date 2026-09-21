@@ -36,6 +36,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
@@ -231,26 +232,26 @@ def _ordinal_frame(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     return pd.DataFrame(data, index=df.index)
 
 
-class OrdinalBandEncoder:
+class OrdinalBandEncoder(TransformerMixin, BaseEstimator):
     """Stateless transformer mapping declared bands to integers.
 
-    Implemented as a small class rather than a ``FunctionTransformer`` so that
-    the column list travels with it and the feature names it produces are
-    available for SHAP.
+    A small estimator rather than a ``FunctionTransformer`` so that the column
+    list travels with it and the names it produces survive into SHAP and the
+    importance reports. Inheriting the sklearn mixins is what gives it
+    ``set_output`` support, which the surrounding ColumnTransformer needs in
+    order to keep emitting named columns.
     """
 
-    def __init__(self, columns: list[str]) -> None:
-        self.columns = columns
+    def __init__(self, columns: list[str] | None = None) -> None:
+        self.columns = columns or []
 
     def fit(self, X: pd.DataFrame, y=None):  # noqa: N803 - sklearn API
-        del X, y
+        del y
+        self.n_features_in_ = X.shape[1]
         return self
 
     def transform(self, X: pd.DataFrame) -> np.ndarray:  # noqa: N803 - sklearn API
         return _ordinal_frame(X, self.columns).to_numpy(dtype="float64")
-
-    def fit_transform(self, X: pd.DataFrame, y=None) -> np.ndarray:  # noqa: N803
-        return self.fit(X, y).transform(X)
 
     def get_feature_names_out(self, input_features=None) -> np.ndarray:
         del input_features
@@ -314,11 +315,17 @@ def build_preprocessor(
             )
         )
 
-    return ColumnTransformer(
+    transformer = ColumnTransformer(
         transformers,
         remainder="drop",
         verbose_feature_names_out=False,
     )
+    # Keep column names all the way through to the estimator. Without this the
+    # transformer emits a bare array, so a model fitted through the pipeline
+    # records feature names at fit time and then warns that it is being given
+    # an unnamed array at predict time. Named output also means SHAP and the
+    # permutation-importance reports get real feature names for free.
+    return transformer.set_output(transform="pandas")
 
 
 def feature_names(preprocessor: ColumnTransformer) -> list[str]:

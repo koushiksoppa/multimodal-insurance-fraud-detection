@@ -72,8 +72,11 @@ def test_preprocessor_produces_a_finite_dense_matrix(claims: pd.DataFrame):
     pre = build_preprocessor(spec)
     matrix = pre.fit_transform(engineered[spec.columns])
 
+    # The preprocessor emits named columns so that feature names survive into
+    # SHAP and the importance reports.
+    assert isinstance(matrix, pd.DataFrame)
     assert matrix.shape[0] == len(claims)
-    assert np.isfinite(matrix).all()
+    assert np.isfinite(matrix.to_numpy()).all()
 
 
 def test_feature_names_match_the_matrix_width(claims: pd.DataFrame):
@@ -95,7 +98,7 @@ def test_preprocessor_fitted_on_train_transforms_unseen_rows(claims: pd.DataFram
     transformed = pre.transform(test[spec.columns])
 
     assert transformed.shape[1] == len(feature_names(pre))
-    assert np.isfinite(transformed).all()
+    assert np.isfinite(transformed.to_numpy()).all()
 
 
 def test_unseen_category_at_transform_time_does_not_raise(claims: pd.DataFrame):
@@ -106,7 +109,7 @@ def test_unseen_category_at_transform_time_does_not_raise(claims: pd.DataFrame):
 
     novel = engineered.iloc[[0]].copy()
     novel["make"] = "A Make That Does Not Exist"
-    assert np.isfinite(pre.transform(novel[spec.columns])).all()
+    assert np.isfinite(pre.transform(novel[spec.columns]).to_numpy()).all()
 
 
 def test_excluding_sex_removes_it_from_the_feature_set():
@@ -131,7 +134,7 @@ def test_narrative_preprocessor_runs(claims: pd.DataFrame):
     pre = build_preprocessor(spec)
     matrix = pre.fit_transform(claims[spec.columns])
     assert matrix.shape[0] == len(claims)
-    assert np.isfinite(matrix).all()
+    assert np.isfinite(matrix.to_numpy()).all()
 
 
 def test_preprocessor_composes_inside_a_pipeline(claims: pd.DataFrame):
@@ -157,7 +160,7 @@ def test_scaling_toggle_changes_the_numeric_columns(claims: pd.DataFrame, scale:
     matrix = build_preprocessor(spec, scale_numeric=scale).fit_transform(
         engineered[spec.columns]
     )
-    age_column = matrix[:, spec.numeric.index("driver_age")]
+    age_column = matrix["driver_age"].to_numpy()
     if scale:
         assert abs(age_column.mean()) < 1e-6
     else:

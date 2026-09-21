@@ -90,6 +90,16 @@ class ClassificationMetrics:
     tn: int
     fn: int
 
+    capacity: dict[str, float] = field(default_factory=dict)
+    """Precision, recall and lift at fixed review capacities.
+
+    Threshold-free: computed by ranking claims and taking the top k percent.
+    This is how a fraud triage queue is actually operated -- an investigations
+    team has a fixed number of hours, not a fixed probability cut-off -- and it
+    makes two models directly comparable without either one's chosen threshold
+    getting in the way.
+    """
+
     intervals: dict[str, tuple[float, float]] = field(default_factory=dict)
 
     def as_dict(self) -> dict:
@@ -99,11 +109,18 @@ class ClassificationMetrics:
         payload["intervals"] = {k: list(v) for k, v in self.intervals.items()}
         return payload
 
+    def __getitem__(self, key: str) -> float:
+        """Allow ``metrics['pr_auc']`` so report builders can be generic."""
+        return getattr(self, key)
+
     def summary(self) -> str:
+        top10 = self.capacity.get("lift_at_10pct")
+        capacity_note = f" | lift@10% {top10:.2f}x" if top10 is not None else ""
         return (
             f"PR-AUC {self.pr_auc:.4f} (lift {self.pr_auc_lift:.2f}x) | "
             f"ROC-AUC {self.roc_auc:.4f} | P {self.precision:.4f} "
             f"R {self.recall:.4f} F1 {self.f1:.4f} @ thr {self.threshold:.4f}"
+            f"{capacity_note}"
         )
 
 
@@ -135,6 +152,51 @@ def expected_calibration_error(
         weight = mask.mean()
         total += weight * abs(y_prob[mask].mean() - y_true[mask].mean())
     return float(total)
+
+
+DEFAULT_CAPACITIES: tuple[float, ...] = (0.01, 0.05, 0.10, 0.20)
+
+
+def capacity_metrics(
+    y_true: np.ndarray,
+    y_score: np.ndarray,
+    *,
+    capacities: tuple[float, ...] = DEFAULT_CAPACITIES,
+) -> dict[str, float]:
+    """Precision, recall and lift when only the top k percent can be reviewed.
+
+    Lift is precision divided by prevalence: how many times more fraud an
+    investigator sees in the flagged queue than in a random sample of the same
+    size. It is the number an operations manager would actually ask for, and
+    unlike raw precision it is comparable across splits with different base
+    rates -- which matters here, since the temporal test period has a lower
+    fraud rate than the training period.
+    """
+    y_true = np.asarray(y_true).astype(int)
+    y_score = np.asarray(y_score, dtype=float)
+
+    n = len(y_true)
+    total_positive = int(y_true.sum())
+    prevalence = total_positive / n if n else 0.0
+
+    # Descending by score; ties keep their original order, which is arbitrary
+    # but consistent, and the effect is negligible at these capacities.
+    order = np.argsort(-y_score, kind="stable")
+    ranked = y_true[order]
+
+    out: dict[str, float] = {}
+    for k in capacities:
+        take = max(1, int(round(k * n)))
+        caught = int(ranked[:take].sum())
+        precision = caught / take
+        out[f"precision_at_{int(k * 100)}pct"] = float(precision)
+        out[f"recall_at_{int(k * 100)}pct"] = float(
+            caught / total_positive if total_positive else 0.0
+        )
+        out[f"lift_at_{int(k * 100)}pct"] = float(
+            precision / prevalence if prevalence else float("nan")
+        )
+    return out
 
 
 def compute_metrics(
@@ -191,6 +253,7 @@ def compute_metrics(
         fp=int(fp),
         tn=int(tn),
         fn=int(fn),
+        capacity=capacity_metrics(y_true, y_score),
     )
 
     if n_bootstrap:
