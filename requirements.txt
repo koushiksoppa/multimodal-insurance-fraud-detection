@@ -9,6 +9,10 @@ pandas==2.3.1
 scipy==1.15.3
 scikit-learn==1.7.1
 lightgbm==4.6.0
+# Parquet is the interchange format for processed tables: it preserves
+# dtypes, which CSV does not, and a silently stringified category would
+# change how downstream encoders behave.
+pyarrow==21.0.0
 
 # --- deep learning / transformers ---
 transformers==4.53.2

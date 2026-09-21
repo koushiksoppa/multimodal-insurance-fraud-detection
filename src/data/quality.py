@@ -125,12 +125,32 @@ def check_claim_id_unique(df: pd.DataFrame, **_: Any) -> CheckResult:
     )
 
 
+#: Columns excluded when deciding whether two claims are "the same record".
+#: Identifiers are excluded because they are unique by construction -- leaving
+#: policy_number in would make every row distinct and the duplicate check
+#: incapable of ever firing. Image and bookkeeping columns are excluded because
+#: they are attached after the fact and say nothing about the claim itself.
+_NON_IDENTIFYING_COLUMNS = {
+    "claim_id",
+    "policy_number",
+    "fraud_label",
+    "split",
+    "track",
+    "dataset_version",
+    "image_id",
+    "image_path",
+    "damage_class",
+    "damage_location",
+    "damage_condition",
+    "damage_severity",
+    "has_image",
+    "claim_text",
+}
+
+
 def check_duplicate_claims(df: pd.DataFrame, **_: Any) -> CheckResult:
     """Identical feature rows carrying different labels are a labelling defect."""
-    feature_cols = [
-        c for c in df.columns
-        if c not in {"claim_id", "fraud_label", "split", "image_id", "image_path"}
-    ]
+    feature_cols = [c for c in df.columns if c not in _NON_IDENTIFYING_COLUMNS]
     dupes = df.duplicated(subset=feature_cols, keep=False)
     n_dupe_rows = int(dupes.sum())
 
@@ -414,9 +434,10 @@ def run_all(df: pd.DataFrame, **context: Any) -> QualityReport:
             )
         report.results.append(result)
 
-        level = logger.info
-        if not result.passed:
+        if result.passed:
+            logger.info("[pass] %s: %s", result.name, result.message)
+        else:
             level = logger.error if result.severity == "error" else logger.warning
-        level("[%s] %s: %s", result.severity, result.name, result.message)
+            level("[FAIL/%s] %s: %s", result.severity, result.name, result.message)
 
     return report

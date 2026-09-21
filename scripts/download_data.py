@@ -67,7 +67,10 @@ def main() -> int:
             }
             for key, src in sources.SOURCES.items()
         },
-        "local_paths": {k: str(v.relative_to(paths.root)) for k, v in acquired.items()},
+        # Recorded as POSIX so the manifest reads the same on any platform.
+        "local_paths": {
+            k: v.relative_to(paths.root).as_posix() for k, v in acquired.items()
+        },
     }
 
     if "structured" in acquired:

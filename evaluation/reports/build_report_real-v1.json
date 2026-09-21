@@ -1,0 +1,278 @@
+{
+  "dataset_version": "real-v1",
+  "track": "real",
+  "seed": 20260921,
+  "n_claims": 15420,
+  "n_columns": 46,
+  "structured_load": {
+    "n_rows": 15420,
+    "n_columns_source": 33,
+    "sentinel_age_rows": 320,
+    "sentinel_categorical": {
+      "claim_day_of_week": 1,
+      "claim_month": 1
+    },
+    "unmapped_source_columns": [],
+    "negative_report_delay_rows": 3,
+    "missing_after_load": {
+      "report_delay_weeks": 4
+    },
+    "duplicate_policy_numbers": 0,
+    "fully_duplicated_rows": 0
+  },
+  "linkage": {
+    "n_claims": 15420,
+    "n_images_available": 2300,
+    "n_attached": 2300,
+    "coverage": 0.14915693904020752,
+    "coverage_by_class": {
+      "0": 0.14913430364903082,
+      "1": 0.1495124593716143
+    },
+    "prevalence_full": 0.05985732814526589,
+    "prevalence_covered": 0.06,
+    "strategy": "stratified, prevalence-preserving, no image reuse"
+  },
+  "image_inventory": {
+    "n_usable": 2300,
+    "n_unreadable": 0,
+    "unreadable_examples": [],
+    "class_counts": {
+      "F_Breakage": 500,
+      "F_Normal": 500,
+      "F_Crushed": 400,
+      "R_Breakage": 300,
+      "R_Crushed": 300,
+      "R_Normal": 300
+    }
+  },
+  "split": {
+    "strategy": "temporal",
+    "sizes": {
+      "train": 8762,
+      "val": 2575,
+      "test": 4083
+    },
+    "positives": {
+      "train": 550,
+      "val": 160,
+      "test": 213
+    },
+    "positive_rates": {
+      "train": 0.06277105683633874,
+      "val": 0.062135922330097085,
+      "test": 0.05216752387950037
+    },
+    "image_coverage": {
+      "train": 0.14985163204747776,
+      "val": 0.15611650485436893,
+      "test": 0.14327700220426157
+    },
+    "boundaries": {
+      "train": "< 1995-07",
+      "val": "1995-07 to < 1996-01",
+      "test": ">= 1996-01"
+    },
+    "notes": [
+      "Splits are ordered in time; no claim in train occurs after a claim in test.",
+      "policy_year is constant within the test split and nearly so within the others, so it is dropped from the feature set under this strategy to avoid a degenerate feature."
+    ]
+  },
+  "leakage_audit": [
+    {
+      "name": "claim_disjoint",
+      "passed": true,
+      "message": "0 claims appear in more than one split",
+      "n_leaked": 0
+    },
+    {
+      "name": "image_disjoint",
+      "passed": true,
+      "message": "0 images appear in more than one split",
+      "n_attached": 2300,
+      "n_leaked": 0
+    },
+    {
+      "name": "policy_disjoint",
+      "passed": true,
+      "message": "0 policy numbers appear in more than one split",
+      "n_leaked": 0
+    },
+    {
+      "name": "duplicate_across_splits",
+      "passed": true,
+      "message": "0 identical feature vectors span more than one split",
+      "n_duplicate_rows": 0,
+      "n_cross_split_groups": 0
+    },
+    {
+      "name": "temporal_order",
+      "passed": true,
+      "message": "latest train key 19950605, earliest test key 19960101",
+      "train_max": 19950605,
+      "test_min": 19960101
+    }
+  ],
+  "quality": {
+    "ok": true,
+    "n_checks": 13,
+    "n_errors": 0,
+    "n_warnings": 1,
+    "results": [
+      {
+        "name": "claim_id_present",
+        "severity": "error",
+        "passed": true,
+        "message": "0 rows have no claim_id",
+        "details": {
+          "n_missing": 0
+        }
+      },
+      {
+        "name": "claim_id_unique",
+        "severity": "error",
+        "passed": true,
+        "message": "0 duplicate claim_id values",
+        "details": {
+          "n_duplicates": 0
+        }
+      },
+      {
+        "name": "duplicate_claims",
+        "severity": "warning",
+        "passed": true,
+        "message": "0 rows share a feature vector with another row; 0 such groups carry conflicting fraud labels",
+        "details": {
+          "n_duplicate_rows": 0,
+          "n_inconsistent_groups": 0
+        }
+      },
+      {
+        "name": "label_values",
+        "severity": "error",
+        "passed": true,
+        "message": "fraud_label values [np.int64(0), np.int64(1)], 0 missing",
+        "details": {
+          "observed": [
+            0,
+            1
+          ],
+          "n_missing": 0
+        }
+      },
+      {
+        "name": "class_balance",
+        "severity": "info",
+        "passed": true,
+        "message": "fraud rate 0.0599 (923 of 15420 claims)",
+        "details": {
+          "n_total": 15420,
+          "n_positive": 923,
+          "n_negative": 14497,
+          "positive_rate": 0.05985732814526589,
+          "imbalance_ratio": 15.706392199349946
+        }
+      },
+      {
+        "name": "numeric_validity",
+        "severity": "warning",
+        "passed": false,
+        "message": "issues found: {'driver_age_out_of_range': 320}",
+        "details": {
+          "driver_age_out_of_range": 320
+        }
+      },
+      {
+        "name": "text_non_empty",
+        "severity": "error",
+        "passed": true,
+        "message": "0 empty narratives, 0 shorter than 5 words",
+        "details": {
+          "n_empty": 0,
+          "n_very_short": 0,
+          "median_words": 79.0,
+          "p95_words": 98.0,
+          "max_words": 116
+        }
+      },
+      {
+        "name": "images_resolve",
+        "severity": "error",
+        "passed": true,
+        "message": "0 of 2300 referenced images are missing from disk",
+        "details": {
+          "n_referenced": 2300,
+          "n_missing": 0,
+          "examples": []
+        }
+      },
+      {
+        "name": "image_reuse",
+        "severity": "error",
+        "passed": true,
+        "message": "0 images are attached to more than one claim",
+        "details": {
+          "n_attached": 2300,
+          "n_reused": 0
+        }
+      },
+      {
+        "name": "corrupted_images",
+        "severity": "info",
+        "passed": true,
+        "message": "image decoding not verified in this run",
+        "details": {}
+      },
+      {
+        "name": "orphan_images",
+        "severity": "info",
+        "passed": true,
+        "message": "0 images on disk are not attached to any claim",
+        "details": {
+          "n_orphans": 0,
+          "n_attached": 2300
+        }
+      },
+      {
+        "name": "split_disjoint",
+        "severity": "error",
+        "passed": true,
+        "message": "0 claims and 0 images appear in more than one split",
+        "details": {
+          "claim_leaks": 0,
+          "image_leaks": 0
+        }
+      },
+      {
+        "name": "split_coverage",
+        "severity": "error",
+        "passed": true,
+        "message": "train: n=8762, pos=550 (0.0628); val: n=2575, pos=160 (0.0621); test: n=4083, pos=213 (0.0522)",
+        "details": {
+          "train": {
+            "n": 8762,
+            "n_positive": 550,
+            "positive_rate": 0.06277105683633874
+          },
+          "val": {
+            "n": 2575,
+            "n_positive": 160,
+            "positive_rate": 0.062135922330097085
+          },
+          "test": {
+            "n": 4083,
+            "n_positive": 213,
+            "positive_rate": 0.05216752387950037
+          }
+        }
+      }
+    ]
+  },
+  "text_generation": {
+    "omission_rate": 0.15,
+    "min_filler": 0,
+    "max_filler": 2,
+    "shuffle_facts": true,
+    "include_closer_prob": 0.5
+  }
+}
