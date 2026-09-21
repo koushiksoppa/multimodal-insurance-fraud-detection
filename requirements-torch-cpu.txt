@@ -1,0 +1,10 @@
+# CPU-only PyTorch wheels.
+#
+# Install with the dedicated CPU index so pip does not pull the multi-gigabyte
+# CUDA build. The development machine for this project has no CUDA device, and
+# the CPU wheels are roughly an order of magnitude smaller.
+#
+#   pip install -r requirements-torch-cpu.txt --index-url https://download.pytorch.org/whl/cpu
+#
+torch==2.8.0
+torchvision==0.23.0

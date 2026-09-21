@@ -1,0 +1,54 @@
+[project]
+name = "multimodal-insurance-fraud-detection"
+version = "0.1.0"
+description = "Multimodal insurance fraud detection and damage intelligence over claim text, damage imagery and structured claim records."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Koushik Soppa", email = "koushiksoppa@gmail.com" }]
+keywords = [
+    "multimodal-learning",
+    "fraud-detection",
+    "computer-vision",
+    "natural-language-processing",
+    "explainable-ai",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["src", "app"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["notebooks", ".venv"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # import ordering
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # comprehensions
+    "SIM", # simplifications
+]
+ignore = [
+    "E501",  # line length is enforced by the formatter, not the linter
+    "B008",  # FastAPI dependency injection relies on calls in argument defaults
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B018"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "slow: tests that load a neural backbone or train a model",
+    "network: tests that require internet access",
+]
+filterwarnings = ["ignore::DeprecationWarning"]

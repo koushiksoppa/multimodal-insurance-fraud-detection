@@ -1,0 +1,56 @@
+# --- python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# --- environments ---
+.venv/
+venv/
+env/
+.env
+
+# --- tooling caches ---
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.coverage
+coverage.xml
+htmlcov/
+
+# --- data ---
+# Raw, processed and cached artefacts are reproducible from scripts/ and are
+# far too large for version control. Directory structure is kept via .gitkeep.
+data/raw/*
+data/processed/*
+data/synthetic/*
+data/cache/*
+!data/**/.gitkeep
+!data/**/README.md
+
+# --- model + experiment artefacts ---
+experiments/runs/*
+!experiments/runs/.gitkeep
+*.pt
+*.pth
+*.joblib
+*.pkl
+*.db
+*.sqlite
+*.sqlite3
+
+# --- generated figures and reports ---
+# Committed selectively: see evaluation/README.md
+evaluation/figures/*
+!evaluation/figures/.gitkeep
+
+# --- huggingface cache, if redirected into the project ---
+.hf_cache/
+
+# --- os / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

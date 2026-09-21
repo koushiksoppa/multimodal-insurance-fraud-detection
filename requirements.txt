@@ -1,0 +1,40 @@
+# Core runtime dependencies.
+#
+# PyTorch is installed separately from requirements-torch-cpu.txt so that the
+# CPU-only wheel index can be used. See scripts/setup_env.ps1.
+
+# --- scientific stack ---
+numpy==2.2.6
+pandas==2.3.1
+scipy==1.15.3
+scikit-learn==1.7.1
+lightgbm==4.6.0
+
+# --- deep learning / transformers ---
+transformers==4.53.2
+tokenizers==0.21.2
+safetensors==0.5.3
+huggingface-hub==0.34.4
+pillow==11.3.0
+
+# --- explainability ---
+shap==0.48.0
+
+# --- visualisation ---
+matplotlib==3.10.3
+
+# --- api / serving ---
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+pydantic==2.11.7
+pydantic-settings==2.10.1
+python-multipart==0.0.20
+
+# --- persistence ---
+SQLAlchemy==2.0.42
+
+# --- utilities ---
+PyYAML==6.0.2
+tqdm==4.67.1
+joblib==1.5.1
+requests==2.32.4
