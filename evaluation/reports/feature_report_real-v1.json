@@ -1,0 +1,38 @@
+{
+  "dataset_version": "real-v1",
+  "dims": {
+    "tabular": 46,
+    "text": 384,
+    "image": 512
+  },
+  "reports": {
+    "tabular": {
+      "n_features": 46,
+      "fitted_on": "train",
+      "n_train_rows": 8762
+    },
+    "text": {
+      "n_texts": 15420,
+      "embedding_dim": 384,
+      "max_length": 160,
+      "n_truncated": 0,
+      "truncation_rate": 0.0,
+      "median_tokens": 95.0,
+      "p95_tokens": 118.0,
+      "max_tokens": 138,
+      "seconds": 522.2742086999351,
+      "from_cache": false
+    },
+    "image": {
+      "n_images": 2300,
+      "embedding_dim": 512,
+      "backbone": "resnet18",
+      "n_failed": 0,
+      "failed_examples": [],
+      "seconds": 184.54841399996076,
+      "from_cache": false,
+      "n_encoded": 2300,
+      "coverage": 0.14915693904020752
+    }
+  }
+}

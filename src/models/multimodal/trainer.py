@@ -52,6 +52,20 @@ class TrainConfig:
     #: Stop when validation PR-AUC has not improved for this many epochs.
     patience: int = 10
 
+    #: Probability of masking out each present modality during training.
+    #:
+    #: Without this, a model whose text and tabular blocks are always present
+    #: at training time has never seen them absent, so asking it to score a
+    #: claim with a missing narrative is an out-of-distribution request and the
+    #: missing-modality experiment measures nothing but that surprise. Dropping
+    #: modalities at random during training makes the degradation meaningful.
+    #: The image modality needs no help here -- it is genuinely absent for 85%
+    #: of real claims -- but the mechanism applies uniformly.
+    #:
+    #: Off by default so the ablation reports an unmodified architecture, and
+    #: turned on for the missing-modality study, where the two are compared.
+    modality_dropout: float = 0.0
+
     grad_clip: float = 1.0
     seed: int = 20260921
     device: str = "auto"
@@ -65,6 +79,7 @@ class TrainConfig:
             "weight_decay": self.weight_decay,
             "class_weight_power": self.class_weight_power,
             "patience": self.patience,
+            "modality_dropout": self.modality_dropout,
             "grad_clip": self.grad_clip,
             "seed": self.seed,
         }
@@ -170,6 +185,9 @@ class FusionTrainer:
                 masks = {k: v.to(self.device) for k, v in masks.items()}
                 labels = labels.to(self.device)
 
+                if self.config.modality_dropout > 0:
+                    masks = self._drop_modalities(masks)
+
                 optimiser.zero_grad(set_to_none=True)
                 loss = criterion(model(features, masks), labels)
                 loss.backward()
@@ -224,6 +242,36 @@ class FusionTrainer:
             self.history.best_val_pr_auc, self.history.best_epoch,
         )
         return self
+
+    def _drop_modalities(
+        self, masks: dict[str, torch.Tensor]
+    ) -> dict[str, torch.Tensor]:
+        """Randomly mask out present modalities during training.
+
+        Applied only to modalities that are actually present -- dropping an
+        already-absent one is a no-op. Claims that would lose every modality
+        keep one at random, since a claim with no inputs at all carries no
+        information and only adds noise to the gradient.
+        """
+        names = list(masks)
+        if len(names) < 2:
+            return masks
+
+        stacked = torch.stack([masks[n] for n in names], dim=1)
+        keep = torch.rand_like(stacked, dtype=torch.float) >= self.config.modality_dropout
+        dropped = stacked & keep
+
+        # Restore one modality for any claim left with nothing.
+        empty = ~dropped.any(dim=1)
+        if empty.any():
+            available = stacked[empty].float()
+            # Sample among the modalities that were genuinely present.
+            choice = torch.multinomial(available + 1e-9, num_samples=1)
+            restored = torch.zeros_like(available, dtype=torch.bool)
+            restored.scatter_(1, choice, True)
+            dropped[empty] = restored & stacked[empty]
+
+        return {name: dropped[:, i] for i, name in enumerate(names)}
 
     def _evaluate(self, model: FusionModel, loader, criterion):
         model.eval()
